@@ -1,6 +1,86 @@
 import { Card, CardImg, CardText, CardBody,
-    CardTitle, Breadcrumb, BreadcrumbItem } from 'reactstrap';
+    CardTitle, Breadcrumb, BreadcrumbItem, Button,Modal, ModalHeader, ModalBody,Label,Row, Col} from 'reactstrap';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Control, LocalForm, Errors } from 'react-redux-form';
+
+const minLength = (len) => (val) => val && (val.length >= len);
+const maxLength = (len) => (val) => !(val) || (val.length <= len);
+
+function CommentForm ({dishId, addComment}){
+
+    const [isModalOpen, setModal] = useState(false);
+
+    const handleSubmit = (values) => {
+        console.log(values)
+        addComment(dishId, values.rating, values.author, values.comment);
+    }
+    return (
+        <div>
+            <Button outline onClick={() => setModal(true)}>
+                Submit Comment
+            </Button>
+            <Modal isOpen={isModalOpen} toggle={()=>setModal(false)}>
+                <ModalHeader >Submit Comment</ModalHeader>
+                <ModalBody>
+                    <LocalForm onSubmit={(values) => handleSubmit(values)}>
+                        <Row className="form-group">
+                            <Col md={10}>
+                                <Label htmlFor="rating">Rating</Label>
+                                <Control.select model=".rating" id="rating" name="rating"
+                                    className="form-control" >
+                                        <option selected hidden>Choose here</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                </Control.select>
+                            </Col>
+                        </Row>
+                        <Row className="form-group">
+                            <Col md={10}>
+                                <Label htmlFor="author">Your Name</Label>
+                                <Control.text model=".author" id="author" name="author"
+                                    placeholder="Your Name"
+                                    className="form-control"
+                                    validators={{
+                                        minLength : minLength(3), maxLength : maxLength(15)
+                                    }}
+                                />
+                                <Errors
+                                    className="text-danger"
+                                    model=".author"
+                                    show="touched"
+                                    messages={{
+                                        minLength: 'Must be greater than 2 characters ',
+                                        maxLength: 'Must be 15 characters or less '
+                                    }}
+                                />
+                            </Col>
+                        </Row>
+                        <Row className="form-group">
+                            <Col md={10}>
+                                <Label htmlFor="comment" >Comment</Label>
+                                <Control.textarea model=".comment" id="comment" name="comment" rows="5"
+                                    className="form-control"
+                                />
+                            </Col>
+                        </Row>
+                        <Row className="form-group">
+                            <Col >
+                                <Button type="submit" color="primary">
+                                    Submit
+                                </Button>
+                            </Col>
+                        </Row>
+                    </LocalForm>
+                </ModalBody>
+            </Modal>
+        </div>
+    );
+}
+
 function RenderDish ({dish}){
     return (
         <Card>
@@ -10,10 +90,11 @@ function RenderDish ({dish}){
                 <CardText>{dish.description}</CardText>
             </CardBody>
         </Card>
+        
     )
 }
 
-function RenderComments({comments}){
+function RenderComments({comments, addComment, dishId}) {
     const comms = comments.map ( (comment) => {
         return (
             <div key={comment.id}>
@@ -29,6 +110,7 @@ function RenderComments({comments}){
                 <div className="list-unstyled">
                     {comms}
                 </div>
+                <CommentForm dishId={dishId} addComment={addComment} />
             </div>
         );
     }
@@ -44,6 +126,8 @@ function formatDate(datetime){
 }
 
 const DishDetail = (props) => {
+
+
     if (props.dish)
         return (
             <div className="container">
@@ -59,12 +143,11 @@ const DishDetail = (props) => {
                     </div>
                 </div>
                 <div className="row">
-                    <div className="col-12 col-md-5 m-1">
                         <RenderDish dish={props.dish} />
-                    </div>
-                    <div className="col-12 col-md-5 m-1">
-                        <RenderComments comments={props.comments} />
-                    </div>
+                        <RenderComments comments={props.comments}
+                            addComment={props.addComment}
+                            dishId={props.dish.id}
+                        />                        
                 </div>
             </div>
         );
